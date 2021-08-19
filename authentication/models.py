@@ -2,6 +2,7 @@ import uuid as uuid
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin)
 from django.core.mail import send_mail
 from django.db import models
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class UserManager(BaseUserManager):
@@ -64,4 +65,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
     def tokens(self):
-        return ''
+        tokens = RefreshToken.for_user(self)
+        return {
+            'refresh': str(tokens),
+            'access': str(tokens.access_token)
+        }

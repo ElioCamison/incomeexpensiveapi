@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from authentication.serializers import RegisterSerializer, EmailVerificationSerializer
+from authentication.serializers import RegisterSerializer, EmailVerificationSerializer, LoginSerializer
 
 from .models import User
 
@@ -33,7 +33,6 @@ class RegisterView(GenericAPIView):
 
 
 class VerifyEmail(APIView):
-
     serializer_class = EmailVerificationSerializer
 
     token = openapi.Parameter('token', in_=openapi.IN_QUERY, description='Token', type=openapi.TYPE_STRING)
@@ -42,7 +41,7 @@ class VerifyEmail(APIView):
     def get(self, request):
         token = request.GET.get('token')
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY)
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             user = User.objects.get(id=payload['user_id'])
 
             if user.is_verified is False:
@@ -53,3 +52,12 @@ class VerifyEmail(APIView):
             return Response({'error': 'Activation link expired'}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError:
             return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginAPIvIEW(GenericAPIView):
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
