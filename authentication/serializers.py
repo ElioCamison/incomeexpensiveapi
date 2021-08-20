@@ -41,7 +41,14 @@ class EmailVerificationSerializer(serializers.ModelSerializer):
 
 class LoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=50, min_length=6)
-    password = serializers.CharField(max_length=68, min_length=8)
+    password = serializers.CharField(max_length=68, min_length=8, write_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "password"
+        )
 
     def validate(self, attrs):
         email = attrs.get('email', '')
@@ -49,12 +56,12 @@ class LoginSerializer(serializers.ModelSerializer):
 
         user = auth.authenticate(email=email, password=password)
 
+        if not user:
+            raise AuthenticationFailed('Invalid credentials, try again')
         if not user.is_active:
             raise AuthenticationFailed('Account disabled, contact admin')
         if not user.is_verified:
             raise AuthenticationFailed('Email is not verified')
-        if not user:
-            raise AuthenticationFailed('Invalid credentials, try again')
 
         return {
             'email': user.email,
